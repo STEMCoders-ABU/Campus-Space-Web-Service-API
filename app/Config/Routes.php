@@ -31,8 +31,12 @@ $routes->setAutoRoute(true);
 // We get a performance increase by specifying the default
 // route since we don't have to scan directories.
 $routes->get('/', 'Home::index');
+$routes->get('moderator', 'Moderator::index');
 $routes->get('moderator/show/(:segment)', 'Moderator::show/$1');
 $routes->post('moderator/update/(:segment)', 'Moderator::update/$1');
+$routes->get('moderator/courses/(:segment)', 'Moderator::courses/$1');
+$routes->get('moderator/categories/(:segment)', 'Moderator::categories/$1');
+$routes->post('moderator/resource/(:segment)', 'Moderator::resource/$1');
 
 /**
  * --------------------------------------------------------------------

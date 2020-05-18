@@ -22,6 +22,19 @@ class ModeratorsModel extends Model
         return $this->where('username', $username)->first();
     }
 
+    public function getCourses ($conditionals)
+    {
+        return $this->db->table('courses')
+                    ->where($conditionals)
+                    ->get()->getResultArray();
+    }
+
+    public function getResourceCategories()
+    {
+        return $this->db->table('resource_categories')
+                    ->get()->getResultArray();
+    }
+
     public function setDefaultValidationRules()
     {
         $validationRules    = 
