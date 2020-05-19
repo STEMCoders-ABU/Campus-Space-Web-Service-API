@@ -30,13 +30,63 @@ $routes->setAutoRoute(true);
 
 // We get a performance increase by specifying the default
 // route since we don't have to scan directories.
-$routes->get('/', 'Home::index');
-$routes->get('moderator', 'Moderator::index');
-$routes->get('moderator/show/(:segment)', 'Moderator::show/$1');
-$routes->post('moderator/update/(:segment)', 'Moderator::update/$1');
-$routes->get('moderator/courses/(:segment)', 'Moderator::courses/$1');
-$routes->get('moderator/categories/(:segment)', 'Moderator::categories/$1');
-$routes->post('moderator/resource/(:segment)', 'Moderator::resource/$1');
+$routes->group('1.0', function($routes)
+{
+	$routes->group('provider', function($routes)
+	{
+		$routes->get('faculties', 'Provider::get_faculties');
+		$routes->get('departments', 'Provider::get_departments');
+		$routes->get('levels', 'Provider::get_levels');
+		$routes->get('courses', 'Provider::get_courses');
+	});
+
+	$routes->group('news', function($routes)
+	{
+		$routes->get('show', 'News::show');
+		$routes->get('comments', 'News::show_comments');
+		$routes->post('comments', 'News::add_comment');
+		$routes->get('comments/category', 'News::show_category_comments');
+		$routes->post('comments/category', 'News::add_category_comment');
+	});
+
+	$routes->group('moderator/(:segment)', function($routes)
+	{
+		$routes->get('show', 'Moderator::show/$1');
+		$routes->post('update', 'Moderator::update/$1');
+		$routes->get('courses', 'Moderator::courses/$1');
+		$routes->get('categories', 'Moderator::categories/$1');
+		$routes->post('resource', 'Moderator::add_resource/$1');
+		$routes->post('news', 'Moderator::add_news/$1');
+		$routes->get('resources', 'Moderator::get_resources/$1');
+		$routes->get('news', 'Moderator::get_news/$1');
+		$routes->delete('resource/(:segment)', 'Moderator::delete_resource/$1/$2');
+		$routes->delete('news/(:segment)', 'Moderator::delete_news/$1/$2');
+		$routes->get('resource/(:segment)', 'Moderator::get_resource/$1/$2');
+		$routes->get('news/(:segment)', 'Moderator::get_news_item/$1/$2');
+		$routes->post('resource/(:segment)', 'Moderator::update_resource/$1/$2');
+		$routes->post('news/(:segment)', 'Moderator::update_news/$1/$2');
+		$routes->post('course', 'Moderator::add_course/$1');
+	});
+
+	$routes->group('resources', function($routes)
+	{
+		$routes->get('show', 'Resources::show');
+		$routes->get('comments', 'Resources::show_comments');
+		$routes->post('comments', 'Resources::add_comment');
+		$routes->get('comments/category', 'Resources::show_category_comments');
+		$routes->post('comments/category', 'Resources::add_category_comment');
+	});
+
+	$routes->group('news', function($routes)
+	{
+		$routes->get('show', 'News::show');
+		$routes->get('comments', 'News::show_comments');
+		$routes->post('comments', 'News::add_comment');
+		$routes->get('comments/category', 'News::show_category_comments');
+		$routes->post('comments/category', 'News::add_category_comment');
+	});
+});
+
 
 /**
  * --------------------------------------------------------------------

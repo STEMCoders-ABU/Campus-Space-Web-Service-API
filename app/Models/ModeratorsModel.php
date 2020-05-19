@@ -35,6 +35,120 @@ class ModeratorsModel extends Model
                     ->get()->getResultArray();
     }
 
+    public function add_resource ($entries)
+    {
+        $this->db->table('resources')->insert($entries);
+        return $this->db->affectedRows() != 0;
+    }
+
+    public function getNewsCategories()
+    {
+        return $this->db->table('news_categories')
+                    ->get()->getResultArray();
+    }
+
+    public function add_news ($entries)
+    {
+        $this->db->table('news')->insert($entries);
+        return $this->db->affectedRows() != 0;
+    }
+
+    public function getResources ($conditionals)
+    {
+        return $this->db->table('resources')
+                    ->where($conditionals)
+                    ->get()->getResultArray();
+    }
+
+    public function getNews ($conditionals)
+    {
+        return $this->db->table('news')
+                    ->where($conditionals)
+                    ->get()->getResultArray();
+    }
+
+    public function remove_resource ($conditionals)
+    {
+        $this->db->table('resources')
+                    ->where($conditionals)
+                    ->delete();
+
+        return $this->db->affectedRows() != 0;
+    }
+
+    public function remove_news ($conditionals)
+    {
+        $this->db->table('news')
+                    ->where($conditionals)
+                    ->delete();
+
+        return $this->db->affectedRows() != 0;
+    }
+
+    public function get_resource ($conditionals)
+    {
+        return $this->db->table('resources')
+                    ->where($conditionals)
+                    ->get()->getResultArray();
+    }
+
+    public function get_news_item ($conditionals)
+    {
+        return $this->db->table('news')
+                    ->where($conditionals)
+                    ->get()->getResultArray();
+    }
+
+    public function update_resource ($entries, $conditionals)
+    {
+        $this->db->table('resources')
+                    ->where($conditionals)
+                    ->update($entries);
+
+        return $this->db->affectedRows() != 0;
+    }
+
+    public function get_resource_title ($id)
+    {
+        $query = $this->db->table('resources')
+                    ->select('title')
+                    ->where('id', $id)
+                    ->get()->getRowArray();
+                    
+        if ($query)
+            return $query['title'];
+        else
+            return '';
+    }
+
+    public function update_news ($entries, $conditionals)
+    {
+        $this->db->table('news')
+                    ->where($conditionals)
+                    ->update($entries);
+
+        return $this->db->affectedRows() != 0;
+    }
+
+    public function get_news_title ($id)
+    {
+        $query = $this->db->table('news')
+                    ->select('title')
+                    ->where('id', $id)
+                    ->get()->getRowArray();
+                    
+        if ($query)
+            return $query['title'];
+        else
+            return '';
+    }
+
+    public function add_course ($entries)
+    {
+        $this->db->table('courses')->insert($entries);
+        return $this->db->affectedRows() != 0;
+    }
+
     public function setDefaultValidationRules()
     {
         $validationRules    = 
