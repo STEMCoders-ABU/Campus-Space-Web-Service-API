@@ -1,30 +1,28 @@
 <?php namespace App\Controllers;
 
 use CodeIgniter\API\ResponseTrait;
-
+ 
 class Moderator extends BaseController
 {
     use ResponseTrait;
 	
-	public function index()
+	public function show()
 	{
-		$moderatorsModel = \model('App\Models\ModeratorsModel', true);
-		echo $moderatorsModel->get_resource_title(1);
-	}
-
-	public function show ($username)
-	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
+		{
+			unset($moderator_data['id']);
+			unset($moderator_data['password']);
 			return $this->respond($moderator_data, 200);
+		}
 		else
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function update ($username)
+	public function update()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
@@ -33,13 +31,8 @@ class Moderator extends BaseController
 			if (! $fields)
 				return $this->failNotFound('No input data was provided!');
 
-			$validationRules = [];
-
 			if (isset($fields['email']))
-			{
-				if ($fields['email'] !== $moderator_data['email'])
-					$validationRules['email'] = 'required|max_length[50]|valid_email|is_unique[moderators.email]';
-			}
+				$validationRules['email'] = "required|max_length[50]|valid_email|is_unique[moderators.email,email,{$moderator_data['email']}]";
 				
 			if (isset($fields['password']))
 				$validationRules['password'] = 'required|max_length[70]';
@@ -53,6 +46,9 @@ class Moderator extends BaseController
 			if (isset($fields['phone']))
 				$validationRules['phone'] = 'required|min_length[11]|max_length[15]';
 				
+			if (! isset($validationRules))
+				return $this->failNotFound('No valid input data was provided!');
+
 			if (! $this->validate($validationRules))
 			{
 				return $this->failValidationError($this->array_to_string($this->validator->getErrors()));
@@ -61,9 +57,18 @@ class Moderator extends BaseController
 			$moderatorsModel = \model('App\Models\ModeratorsModel', true);
 			$id = $moderator_data['id'];
 
+			if (isset($fields['password']))
+				$fields['password'] = password_hash($fields['password'], PASSWORD_DEFAULT);
+
+			if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+				$join = TRUE;
+			else
+				$join = FALSE;
+
 			if ($moderatorsModel->update($id, $fields))
 			{
-				return $this->respond([], 200);
+				$data = $moderatorsModel->getModeratorData($moderator_data['username'], $join);
+				return $this->respond($data, 200);
 			}
 			else
 			{
@@ -74,22 +79,37 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function courses ($username)
+	public function courses()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
 			$moderatorsModel = \model('App\Models\ModeratorsModel', true);
 			$department_id = $moderator_data['department_id'];
 			$level_id = $moderator_data['level_id'];
-			$conditionals =
+			$constraints =
 			[
 				'department_id' => $department_id,
 				'level_id' => $level_id,
 			];
 
-			$courses = $moderatorsModel->getCourses($conditionals);
+			if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+				$join = TRUE;
+			else
+				$join = FALSE;
+
+			if ($this->request->getGet('size') && is_numeric($this->request->getGet('size')))
+				$size = $this->request->getGet('size');
+			else
+				$size = 0;
+
+			if ($this->request->getGet('offset') && is_numeric($this->request->getGet('offset')))
+				$offset = $this->request->getGet('offset');
+			else
+				$offset = 0;
+
+			$courses = $moderatorsModel->getCourses($constraints, $size, $offset, $join);
 			if ($courses)
 			{
 				return $this->respond($courses, 200);
@@ -103,31 +123,9 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function categories ($username)
+	public function add_resource()
 	{
-		$moderator_data = $this->authenticate($username);
-		
-		if ($moderator_data)
-		{
-			$moderatorsModel = \model('App\Models\ModeratorsModel', true);
-			
-			$categories = $moderatorsModel->getResourceCategories();
-			if ($categories)
-			{
-				return $this->respond($categories, 200);
-			}
-			else
-			{
-				return $this->failNotFound('Resource categories not found!');
-			}
-		}
-		else
-			return $this->failUnauthorized('Authentication failed!');
-	}
-
-	public function add_resource ($username)
-	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
@@ -138,7 +136,12 @@ class Moderator extends BaseController
 
 			$allowed_types = '';
 			$category_id = $this->request->getPost('category_id');
+			if (! $category_id)
+				return $this->failNotFound('No category_id was provided!');
+
 			$course_id = $this->request->getPost('course_id');
+			if (! $course_id)
+				return $this->failNotFound('No course_id was provided!');
 			
 			if ($category_id == 1)
 				$allowed_types = 'pdf';
@@ -151,17 +154,17 @@ class Moderator extends BaseController
 
 			$file_size = 0;
 			if ($category_id == 1)
-				$file_size = 50024;
+				$file_size = 51200;
 			else if ($category_id == 2)
-				$file_size = 1500024;
+				$file_size = 153600;
 			else if ($category_id == 3)
-				$file_size = 50024;
+				$file_size = 51200;
 			else if ($category_id == 4)
-				$file_size = 50024;
+				$file_size = 51200;
 
 			$validationRules = 
 			[
-				'title' => 'required|min_length[2]|max_length[50]|is_unique[resources.title]',
+				'title' => 'required|max_length[50]|is_unique[resources.title]',
 				'description' => 'required|max_length[2000]',
 				'category_id' => 'required|is_not_unique[resource_categories.id]',
 				'course_id' => 'required|is_not_unique[courses.id]',
@@ -207,9 +210,9 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function add_news ($username)
+	public function add_news()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
@@ -220,7 +223,7 @@ class Moderator extends BaseController
 
 			$validationRules = 
 			[
-				'title' => 'required|min_length[2]|max_length[200]|is_unique[news.title]',
+				'title' => 'required|max_length[200]|is_unique[news.title]',
 				'content' => 'required|max_length[5000]',
 				'category_id' => 'required|is_not_unique[news_categories.id]',
 			];
@@ -231,7 +234,6 @@ class Moderator extends BaseController
 			}
 
 			$category_id = $this->request->getPost('category_id');
-			$course_id = $this->request->getPost('course_id');
 			$faculty_id = $moderator_data['faculty_id'];
 			$department_id = $moderator_data['department_id'];
 			$level_id = $moderator_data['level_id'];
@@ -260,25 +262,61 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function get_resources ($username)
+	public function get_resources()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
-			$moderatorsModel = \model('App\Models\ModeratorsModel', true);
 			$department_id = $moderator_data['department_id'];
 			$level_id = $moderator_data['level_id'];
-			$conditionals =
+			$constraints =
 			[
-				'department_id' => $department_id,
-				'level_id' => $level_id,
+				'resources.department_id' => $department_id,
+				'resources.level_id' => $level_id,
 			];
 
-			$resources = $moderatorsModel->getResources($conditionals);
-			if ($resources)
+			if ($this->request->getGet('category_id') && is_numeric($this->request->getGet('category_id')))
+				$constraints['resources.category_id'] = $this->request->getGet('category_id');
+
+			if ($this->request->getGet('course_id') && is_numeric($this->request->getGet('course_id')))
+				$constraints['resources.course_id'] = $this->request->getGet('course_id');
+
+			if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+				$join = TRUE;
+			else
+				$join = FALSE;
+
+			if ($this->request->getGet('order_by_downloads') && $this->request->getGet('order_by_downloads') == 'true')
+				$by_downloads = TRUE;
+			else
+				$by_downloads = FALSE;
+
+			if ($this->request->getGet('offset') && is_numeric($this->request->getGet('offset')))
+				$offset = $this->request->getGet('offset');
+			else
+				$offset = 0;
+
+			if ($this->request->getGet('size') && is_numeric($this->request->getGet('size')))
+				$size = $this->request->getGet('size');
+			else
 			{
-				return $this->respond($resources, 200);
+				if ($by_downloads)
+					$size = 10;
+				else
+					$size = 0;
+			}
+
+			$resourcesModel = \model('App\Models\ResourcesModel', true);
+
+			if ($by_downloads)
+				$data = $resourcesModel->getResourcesByDownloads($constraints, $size, $offset, $join);
+			else
+				$data = $resourcesModel->getResources($constraints, $size, $offset, $join);
+
+			if ($data)
+			{
+				return $this->respond($data, 200);
 			}
 			else
 			{
@@ -289,25 +327,43 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function get_news ($username)
+	public function get_news()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
-			$moderatorsModel = \model('App\Models\ModeratorsModel', true);
 			$department_id = $moderator_data['department_id'];
 			$level_id = $moderator_data['level_id'];
-			$conditionals =
+			$constraints =
 			[
-				'department_id' => $department_id,
-				'level_id' => $level_id,
+				'news.department_id' => $department_id,
+				'news.level_id' => $level_id,
 			];
 
-			$news = $moderatorsModel->getNews($conditionals);
-			if ($news)
+			if ($this->request->getGet('category_id') && is_numeric($this->request->getGet('category_id')))
+				$constraints['news.category_id'] = $this->request->getGet('category_id');
+
+			if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+				$join = TRUE;
+			else
+				$join = FALSE;
+
+			if ($this->request->getGet('offset') && is_numeric($this->request->getGet('offset')))
+				$offset = $this->request->getGet('offset');
+			else
+				$offset = 0;
+
+			if ($this->request->getGet('size') && is_numeric($this->request->getGet('size')))
+				$size = $this->request->getGet('size');
+			else
+				$size = 0;
+
+			$newsModel = \model('App\Models\NewsModel', true);
+        	$data = $newsModel->getNews($constraints, $size, $offset, $join);
+			if ($data)
 			{
-				return $this->respond($news, 200);
+				return $this->respond($data, 200);
 			}
 			else
 			{
@@ -318,25 +374,37 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function delete_resource ($username, $id)
+	public function delete_resource()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
+			$resource_id = $this->request->getGet('resource_id');
+			if (! $resource_id)
+				return $this->failNotFound('No resource_id was provided!');
+
 			$moderatorsModel = \model('App\Models\ModeratorsModel', true);
 			$department_id = $moderator_data['department_id'];
 			$level_id = $moderator_data['level_id'];
-			$conditionals =
+			$constraints =
 			[
-				'id' => $id,
+				'id' => $resource_id,
 				'department_id' => $department_id,
 				'level_id' => $level_id,
 			];
 
-			if ($moderatorsModel->remove_resource($conditionals))
+			$resourcesModel = \model('App\Models\ResourcesModel', true);
+			$resource = $resourcesModel->get_resource_item($constraints);
+			if ($moderatorsModel->remove_resource($constraints))
 			{
-				return $this->respond([], 200);
+				$file_deleted = unlink(RESOURCES_PATH . $resource['file']);
+				if ($file_deleted)
+					$file_deleted = 'true';
+				else
+					$file_deleted = 'false';
+
+				return $this->respond(['file_deleted' => $file_deleted], 200);
 			}
 			else
 			{
@@ -347,23 +415,27 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function delete_news ($username, $id)
+	public function delete_news()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
+			$news_id = $this->request->getGet('news_id');
+			if (! $news_id)
+				return $this->failNotFound('No news_id was provided!');
+
 			$moderatorsModel = \model('App\Models\ModeratorsModel', true);
 			$department_id = $moderator_data['department_id'];
 			$level_id = $moderator_data['level_id'];
-			$conditionals =
+			$constraints =
 			[
-				'id' => $id,
+				'id' => $news_id,
 				'department_id' => $department_id,
 				'level_id' => $level_id,
 			];
 
-			if ($moderatorsModel->remove_news($conditionals))
+			if ($moderatorsModel->remove_news($constraints))
 			{
 				return $this->respond([], 200);
 			}
@@ -376,53 +448,71 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function get_resource ($username, $id)
+	public function get_resource()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
-			$moderatorsModel = \model('App\Models\ModeratorsModel', true);
+			$resource_id = $this->request->getGet('resource_id');
+			if (! $resource_id)
+				return $this->failNotFound('No resource_id was provided!');
+			
 			$department_id = $moderator_data['department_id'];
 			$level_id = $moderator_data['level_id'];
-			$conditionals =
+			$constraints =
 			[
-				'id' => $id,
-				'department_id' => $department_id,
-				'level_id' => $level_id,
+				'resources.id' => $resource_id,
+				'resources.department_id' => $department_id,
+				'resources.level_id' => $level_id,
 			];
 
-			$data = $moderatorsModel->get_resource($conditionals);
+			if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+				$join = TRUE;
+			else
+				$join = FALSE;
+
+			$resourcesModel = \model('App\Models\ResourcesModel', true);
+			$data = $resourcesModel->get_resource_item($constraints, $join);
 			if ($data)
 			{
 				return $this->respond($data, 200);
 			}
 			else
 			{
-				return $this->failNotFound('Resource does not exist for this moderator!');
+				return $this->failNotFound('The requested resource does not exist for this moderator!');
 			}
 		}
 		else
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function get_news_item ($username, $id)
+	public function get_news_item()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
-			$moderatorsModel = \model('App\Models\ModeratorsModel', true);
+			$news_id = $this->request->getGet('news_id');
+			if (! $news_id)
+				return $this->failNotFound('No news_id was provided!');
+
 			$department_id = $moderator_data['department_id'];
 			$level_id = $moderator_data['level_id'];
-			$conditionals =
+			$constraints =
 			[
-				'id' => $id,
-				'department_id' => $department_id,
-				'level_id' => $level_id,
+				'news.id' => $news_id,
+				'news.department_id' => $department_id,
+				'news.level_id' => $level_id,
 			];
 
-			$data = $moderatorsModel->get_news_item($conditionals);
+			if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+				$join = TRUE;
+			else
+				$join = FALSE;
+
+			$newsModel = \model('App\Models\NewsModel', true);
+			$data = $newsModel->get_news_item($constraints, $join);
 			if ($data)
 			{
 				return $this->respond($data, 200);
@@ -436,52 +526,58 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function update_resource ($username, $id)
+	public function update_resource()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
+			$resource_id = $this->request->getGet('resource_id');
+			if (! $resource_id)
+				return $this->failNotFound('No resource_id was provided!');
+
 			$fields = $this->request->getPost();
 
 			if (! $fields)
 				return $this->failNotFound('No input data was provided!');
 
-			$moderatorsModel = \model('App\Models\ModeratorsModel', true);
-			$current_title = $moderatorsModel->get_resource_title($id);
+			$faculty_id = $moderator_data['faculty_id'];
+			$department_id = $moderator_data['department_id'];
+			$level_id = $moderator_data['level_id'];
 
-			$validationRules = 
+			$constraints =
 			[
-				'title' => "required|min_length[2]|max_length[50]|is_unique[resources.title,title,{$current_title}]",
-				'description' => 'required|max_length[2000]',
-				'course_id' => 'required|is_not_unique[courses.id]',
+				'id' => $resource_id,
+				'faculty_id' => $faculty_id,
+				'department_id' => $department_id,
+				'level_id' => $level_id,
 			];
+
+			$resourcesModel = \model('App\Models\ResourcesModel', true);
+			$resource = $resourcesModel->get_resource_item($constraints);
+			if (! $resource)
+				return $this->failNotFound('The requested resource was not found! The resource probably does not belong to this moderator.');
+
+			$current_title = $resource['title'];
+			
+			if (isset($fields['title']))
+				$validationRules['title'] = "required|max_length[50]|is_unique[resources.title,title,{$current_title}]";
+				
+			if (isset($fields['description']))
+				$validationRules['description'] = 'required|max_length[2000]';
+
+			if (isset($fields['course_id']))
+				$validationRules['course_id'] = 'required|is_not_unique[courses.id]';
+
+			if (! isset($validationRules))
+				return $this->failNotFound('No valid input data was provided!');
 
 			if (! $this->validate($validationRules))
 			{
 				return $this->failValidationError($this->array_to_string($this->validator->getErrors()));
 			}
 
-			$faculty_id = $moderator_data['faculty_id'];
-			$department_id = $moderator_data['department_id'];
-			$level_id = $moderator_data['level_id'];
-
-			$entries =
-			[
-				'title' => $this->request->getPost('title'),
-				'description' => $this->request->getPost('description'),
-				'course_id' => $this->request->getPost('course_id'),
-			];
-
-			$conditionals =
-			[
-				'id' => $id,
-				'faculty_id' => $faculty_id,
-				'department_id' => $department_id,
-				'level_id' => $level_id,
-			];
-
-			if ($moderatorsModel->update_resource($entries, $conditionals))
+			if ($resourcesModel->update_resource($resource_id, $fields))
 			{
 				return $this->respond([], 200);
 			}
@@ -494,52 +590,56 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function update_news ($username, $id)
+	public function update_news()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
+			$news_id = $this->request->getGet('news_id');
+			if (! $news_id)
+				return $this->failNotFound('No news_id was provided!');
+
 			$fields = $this->request->getPost();
 
 			if (! $fields)
 				return $this->failNotFound('No input data was provided!');
 
-			$moderatorsModel = \model('App\Models\ModeratorsModel', true);
-			$current_title = $moderatorsModel->get_news_title($id);
+			$faculty_id = $moderator_data['faculty_id'];
+			$department_id = $moderator_data['department_id'];
+			$level_id = $moderator_data['level_id'];
 
-			$validationRules = 
+			$constraints =
 			[
-				'title' => "required|min_length[2]|max_length[200]|is_unique[news.title,title,{$current_title}]",
-				'content' => 'required|max_length[5000]',
-				'category_id' => 'required|is_not_unique[news_categories.id]',
+				'id' => $news_id,
+				'faculty_id' => $faculty_id,
+				'department_id' => $department_id,
+				'level_id' => $level_id,
 			];
+
+			$newsModel = \model('App\Models\NewsModel', true);
+			$news = $newsModel->get_news_item($constraints);
+
+			$current_title = $news['title'];
+			
+			if (isset($fields['title']))
+				$validationRules['title'] = "required|max_length[200]|is_unique[news.title,title,{$current_title}]";
+				
+			if (isset($fields['content']))
+				$validationRules['content'] = 'required|max_length[5000]';
+
+			if (isset($fields['category_id']))
+				$validationRules['category_id'] = 'required|is_not_unique[news_categories.id]';
+
+			if (! isset($validationRules))
+				return $this->failNotFound('No valid input data was provided!');
 
 			if (! $this->validate($validationRules))
 			{
 				return $this->failValidationError($this->array_to_string($this->validator->getErrors()));
 			}
 
-			$faculty_id = $moderator_data['faculty_id'];
-			$department_id = $moderator_data['department_id'];
-			$level_id = $moderator_data['level_id'];
-
-			$entries =
-			[
-				'title' => $this->request->getPost('title'),
-				'content' => $this->request->getPost('content'),
-				'category_id' => $this->request->getPost('category_id'),
-			];
-
-			$conditionals =
-			[
-				'id' => $id,
-				'faculty_id' => $faculty_id,
-				'department_id' => $department_id,
-				'level_id' => $level_id,
-			];
-
-			if ($moderatorsModel->update_news($entries, $conditionals))
+			if ($newsModel->update_news($fields, $constraints))
 			{
 				return $this->respond([], 200);
 			}
@@ -552,9 +652,9 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	public function add_course ($username)
+	public function add_course()
 	{
-		$moderator_data = $this->authenticate($username);
+		$moderator_data = $this->authenticate();
 		
 		if ($moderator_data)
 		{
@@ -599,7 +699,7 @@ class Moderator extends BaseController
 			return $this->failUnauthorized('Authentication failed!');
 	}
 
-	private function authenticate ($request_username)
+	private function authenticate()
 	{
 		if (! $this->request->hasHeader('Authorization'))
 			return FALSE;
@@ -627,17 +727,19 @@ class Moderator extends BaseController
 		$username = $credentials[0];
 		$password = $credentials[1];
 
-		if ($username !== $request_username)
-			return FALSE;
-
 		$moderatorsModel = \model('App\Models\ModeratorsModel', true);
 
-		$data = $moderatorsModel->getModeratorData($username);
+		if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+            $join = TRUE;
+        else
+			$join = FALSE;
+			
+		$data = $moderatorsModel->getModeratorData($username, $join);
 
 		if (! $data)
 			return FALSE;
 
-		if ($data['password'] == $password)
+		if (password_verify($password, $data['password']))
 			return $data;
 		else
 			return FALSE;

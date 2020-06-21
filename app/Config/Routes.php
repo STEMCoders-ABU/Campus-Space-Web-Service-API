@@ -38,48 +38,48 @@ $routes->group('1.0', function($routes)
 		$routes->get('departments', 'Provider::get_departments');
 		$routes->get('levels', 'Provider::get_levels');
 		$routes->get('courses', 'Provider::get_courses');
+		$routes->get('resource_categories', 'Provider::get_resource_categories');
+		$routes->get('news_categories', 'Provider::get_news_categories');
 	});
 
-	$routes->group('news', function($routes)
+	$routes->get('moderator', 'Moderator::show');
+	$routes->group('moderator', function($routes)
 	{
-		$routes->get('show', 'News::show');
-		$routes->get('comments', 'News::show_comments');
-		$routes->post('comments', 'News::add_comment');
-		$routes->get('comments/category', 'News::show_category_comments');
-		$routes->post('comments/category', 'News::add_category_comment');
+		$routes->get('show', 'Moderator::show');
+		$routes->post('update', 'Moderator::update');
+		$routes->get('courses', 'Moderator::courses');
+		$routes->post('resource', 'Moderator::add_resource');
+		$routes->post('news_item', 'Moderator::add_news');
+		$routes->get('resources', 'Moderator::get_resources');
+		$routes->get('news', 'Moderator::get_news');
+		$routes->delete('resource', 'Moderator::delete_resource');
+		$routes->delete('news_item', 'Moderator::delete_news');
+		$routes->get('resource', 'Moderator::get_resource');
+		$routes->get('news_item', 'Moderator::get_news_item');
+		$routes->post('resource/update', 'Moderator::update_resource');
+		$routes->post('news_item/update', 'Moderator::update_news');
+		$routes->post('course', 'Moderator::add_course');
 	});
 
-	$routes->group('moderator/(:segment)', function($routes)
-	{
-		$routes->get('show', 'Moderator::show/$1');
-		$routes->post('update', 'Moderator::update/$1');
-		$routes->get('courses', 'Moderator::courses/$1');
-		$routes->get('categories', 'Moderator::categories/$1');
-		$routes->post('resource', 'Moderator::add_resource/$1');
-		$routes->post('news', 'Moderator::add_news/$1');
-		$routes->get('resources', 'Moderator::get_resources/$1');
-		$routes->get('news', 'Moderator::get_news/$1');
-		$routes->delete('resource/(:segment)', 'Moderator::delete_resource/$1/$2');
-		$routes->delete('news/(:segment)', 'Moderator::delete_news/$1/$2');
-		$routes->get('resource/(:segment)', 'Moderator::get_resource/$1/$2');
-		$routes->get('news/(:segment)', 'Moderator::get_news_item/$1/$2');
-		$routes->post('resource/(:segment)', 'Moderator::update_resource/$1/$2');
-		$routes->post('news/(:segment)', 'Moderator::update_news/$1/$2');
-		$routes->post('course', 'Moderator::add_course/$1');
-	});
-
+	$routes->get('resources', 'Resources::show');
 	$routes->group('resources', function($routes)
 	{
 		$routes->get('show', 'Resources::show');
+		$routes->get('resource', 'Resources::get_resource');
+		$routes->post('search', 'Resources::search');
 		$routes->get('comments', 'Resources::show_comments');
 		$routes->post('comments', 'Resources::add_comment');
 		$routes->get('comments/category', 'Resources::show_category_comments');
 		$routes->post('comments/category', 'Resources::add_category_comment');
+		$routes->get('download', 'Resources::download');
 	});
 
+	$routes->get('news', 'News::show');
 	$routes->group('news', function($routes)
 	{
 		$routes->get('show', 'News::show');
+		$routes->get('news_item', 'News::get_news_item');
+		$routes->post('search', 'News::search');
 		$routes->get('comments', 'News::show_comments');
 		$routes->post('comments', 'News::add_comment');
 		$routes->get('comments/category', 'News::show_category_comments');

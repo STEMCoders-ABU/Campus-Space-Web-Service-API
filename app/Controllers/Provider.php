@@ -67,4 +67,26 @@ class Provider extends BaseController
 		else
 			return $this->failNotFound('Data not found!');
     }
+
+    public function get_resource_categories()
+    {
+        $model = \model('App\Models\ProviderModel', true);
+        
+        $data = $model->getResourceCategories();
+		if ($data)
+			return $this->respond($data, 200);
+		else
+			return $this->failNotFound('Data not found!');
+    }
+
+    public function get_news_categories()
+    {
+        $model = \model('App\Models\ProviderModel', true);
+        
+        $data = $model->getNewsCategories();
+		if ($data)
+			return $this->respond($data, 200);
+		else
+			return $this->failNotFound('Data not found!');
+    }
 }

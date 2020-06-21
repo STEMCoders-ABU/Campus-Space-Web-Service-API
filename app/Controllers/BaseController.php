@@ -1,7 +1,7 @@
 <?php
 namespace App\Controllers;
 
-define ('RESOURCES_PATH', WRITEPATH . 'uploads');
+define ('RESOURCES_PATH', '../assets/resources/files/');
 
 /**
  * Class BaseController
@@ -50,7 +50,7 @@ class BaseController extends Controller
 		$str = '';
 		foreach ($array as $item) 
 		{
-			$str .= $item . '<br>';
+			$str .= $item . '\n';
 		}
 
 		return $str;

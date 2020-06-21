@@ -1,7 +1,7 @@
 <?php namespace App\Models;
 
 use CodeIgniter\Model;
-
+ 
 class ModeratorsModel extends Model
 {
     protected $table      = 'moderators';
@@ -17,16 +17,40 @@ class ModeratorsModel extends Model
 
     protected $validationMessages = [];
 
-    public function getModeratorData ($username)
+    public function getModeratorData ($username, $join = FALSE)
     {
-        return $this->where('username', $username)->first();
+        if ($join == FALSE)
+            return $this->table('moderators')
+                        ->where('moderators.username', $username)
+                        ->get()->getRowArray();
+        else
+            return $this->table('moderators')
+                        ->select('moderators.id, moderators.username, moderators.email, moderators.password, moderators.full_name, ' .
+                            'moderators.gender, moderators.phone, moderators.faculty_id, moderators.department_id, moderators.level_id, ' .
+                            'moderators.reg_date, faculties.faculty, departments.department, levels.level')
+                        ->join('faculties', 'faculties.id = moderators.faculty_id')
+                        ->join('departments', 'departments.id = moderators.department_id')
+                        ->join('levels', 'levels.id = moderators.level_id')
+                        ->where('moderators.username', $username)
+                        ->get()->getRowArray();
     }
 
-    public function getCourses ($conditionals)
+    public function getCourses ($constraints, $size, $offset, $join = FALSE)
     {
-        return $this->db->table('courses')
-                    ->where($conditionals)
-                    ->get()->getResultArray();
+        if ($join == FALSE)
+            return $this->db->table('courses')
+                        ->where($constraints)
+                        ->limit($size, $offset)
+                        ->get()->getResultArray();
+        else
+            return $this->db->table('courses')
+                        ->select('courses.id, courses.department_id, courses.level_id, courses.course_code, ' .
+                            'courses.course_title, departments.department, levels.level')
+                        ->join('departments', 'departments.id = courses.department_id')
+                        ->join('levels', 'levels.id = courses.level_id')
+                        ->where($constraints)
+                        ->limit($size, $offset)
+                        ->get()->getResultArray();
     }
 
     public function getResourceCategories()
@@ -53,94 +77,36 @@ class ModeratorsModel extends Model
         return $this->db->affectedRows() != 0;
     }
 
-    public function getResources ($conditionals)
+    public function getResources ($constraints)
     {
         return $this->db->table('resources')
-                    ->where($conditionals)
+                    ->where($constraints)
                     ->get()->getResultArray();
     }
 
-    public function getNews ($conditionals)
+    public function getNews ($constraints)
     {
         return $this->db->table('news')
-                    ->where($conditionals)
+                    ->where($constraints)
                     ->get()->getResultArray();
     }
 
-    public function remove_resource ($conditionals)
+    public function remove_resource ($constraints)
     {
         $this->db->table('resources')
-                    ->where($conditionals)
+                    ->where($constraints)
                     ->delete();
 
         return $this->db->affectedRows() != 0;
     }
 
-    public function remove_news ($conditionals)
+    public function remove_news ($constraints)
     {
         $this->db->table('news')
-                    ->where($conditionals)
+                    ->where($constraints)
                     ->delete();
 
         return $this->db->affectedRows() != 0;
-    }
-
-    public function get_resource ($conditionals)
-    {
-        return $this->db->table('resources')
-                    ->where($conditionals)
-                    ->get()->getResultArray();
-    }
-
-    public function get_news_item ($conditionals)
-    {
-        return $this->db->table('news')
-                    ->where($conditionals)
-                    ->get()->getResultArray();
-    }
-
-    public function update_resource ($entries, $conditionals)
-    {
-        $this->db->table('resources')
-                    ->where($conditionals)
-                    ->update($entries);
-
-        return $this->db->affectedRows() != 0;
-    }
-
-    public function get_resource_title ($id)
-    {
-        $query = $this->db->table('resources')
-                    ->select('title')
-                    ->where('id', $id)
-                    ->get()->getRowArray();
-                    
-        if ($query)
-            return $query['title'];
-        else
-            return '';
-    }
-
-    public function update_news ($entries, $conditionals)
-    {
-        $this->db->table('news')
-                    ->where($conditionals)
-                    ->update($entries);
-
-        return $this->db->affectedRows() != 0;
-    }
-
-    public function get_news_title ($id)
-    {
-        $query = $this->db->table('news')
-                    ->select('title')
-                    ->where('id', $id)
-                    ->get()->getRowArray();
-                    
-        if ($query)
-            return $query['title'];
-        else
-            return '';
     }
 
     public function add_course ($entries)

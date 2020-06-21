@@ -16,19 +16,107 @@ class News extends BaseController
         $faculty_id = $this->request->getGet('faculty_id');
         
         if ($level_id)
-            $constraints['level_id'] = $level_id;
+            $constraints['news.level_id'] = $level_id;
 
         if ($department_id)
-            $constraints['department_id'] = $department_id;
+            $constraints['news.department_id'] = $department_id;
 
         if ($faculty_id)
-            $constraints['faculty_id'] = $faculty_id;
+            $constraints['news.faculty_id'] = $faculty_id;
 
         if ($category_id)
-            $constraints['category_id'] = $category_id;
+            $constraints['news.category_id'] = $category_id;
+
+        if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+            $join = TRUE;
+        else
+            $join = FALSE;
+
+        if ($this->request->getGet('size') && is_numeric($this->request->getGet('size')))
+            $size = $this->request->getGet('size');
+        else
+            $size = 0;
+
+        if ($this->request->getGet('offset') && is_numeric($this->request->getGet('offset')))
+            $offset = $this->request->getGet('offset');
+        else
+            $offset = 0;
 
         $newsModel = \model('App\Models\NewsModel', true);
-        $data = $newsModel->getNews($constraints);
+        $data = $newsModel->getNews($constraints, $size, $offset, $join);
+
+        if ($data)
+            return $this->respond($data, 200);
+        else
+            return $this->failNotFound('No news matching the provided combination was found');
+    }
+
+    public function get_news_item()
+    {
+        $news_id = $this->request->getGet('news_id');
+        if (! $news_id)
+            return $this->failNotFound('No news_id was provided!');
+
+        if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+            $join = TRUE;
+        else
+            $join = FALSE;
+
+        $newsModel = \model('App\Models\NewsModel', true);
+        $data = $newsModel->get_news_item(['news.id' => $news_id], $join);
+        if ($data)
+        {
+            return $this->respond($data, 200);
+        }
+        else
+        {
+            return $this->failNotFound('The requested news does not exist!');
+        }
+    }
+
+    public function search()
+    {
+        $constraints = [];
+
+        $search = $this->request->getPost('search');
+        if (! $search)
+            return $this->failNotFound('No input data was provided!');
+
+        $course_id = $this->request->getGet('course_id');
+        $category_id = $this->request->getGet('category_id');
+        $level_id = $this->request->getGet('level_id');
+        $department_id = $this->request->getGet('department_id');
+        $faculty_id = $this->request->getGet('faculty_id');
+        
+        if ($level_id)
+            $constraints['news.level_id'] = $level_id;
+
+        if ($department_id)
+            $constraints['news.department_id'] = $department_id;
+
+        if ($faculty_id)
+            $constraints['news.faculty_id'] = $faculty_id;
+
+        if ($category_id)
+            $constraints['news.category_id'] = $category_id;
+
+        if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+            $join = TRUE;
+        else
+            $join = FALSE;
+
+        if ($this->request->getGet('size') && is_numeric($this->request->getGet('size')))
+            $size = $this->request->getGet('size');
+        else
+            $size = 0;
+
+        if ($this->request->getGet('offset') && is_numeric($this->request->getGet('offset')))
+            $offset = $this->request->getGet('offset');
+        else
+            $offset = 0;
+
+        $newsModel = \model('App\Models\NewsModel', true);
+        $data = $newsModel->getSearchedNews($constraints, $search, $size, $offset, $join);
 
         if ($data)
             return $this->respond($data, 200);
@@ -45,16 +133,31 @@ class News extends BaseController
         $department_id = $this->request->getGet('department_id');
         
         if ($level_id)
-            $constraints['level_id'] = $level_id;
+            $constraints['news_category_comments.level_id'] = $level_id;
 
         if ($department_id)
-            $constraints['department_id'] = $department_id;
+            $constraints['news_category_comments.department_id'] = $department_id;
 
         if ($category_id)
-            $constraints['category_id'] = $category_id;
+            $constraints['news_category_comments.category_id'] = $category_id;
+
+        if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+            $join = TRUE;
+        else
+            $join = FALSE;
+
+        if ($this->request->getGet('size') && is_numeric($this->request->getGet('size')))
+            $size = $this->request->getGet('size');
+        else
+            $size = 0;
+
+        if ($this->request->getGet('offset') && is_numeric($this->request->getGet('offset')))
+            $offset = $this->request->getGet('offset');
+        else
+            $offset = 0;
 
         $newsModel = \model('App\Models\NewsModel', true);
-        $data = $newsModel->getCategoryComments($constraints);
+        $data = $newsModel->getCategoryComments($constraints, $size, $offset, $join);
         
         if ($data)
             return $this->respond($data, 200);
@@ -71,13 +174,28 @@ class News extends BaseController
         if ($news_id)
             $constraints['news_id'] = $news_id;
 
+        if ($this->request->getGet('join') && $this->request->getGet('join') == 'true')
+            $join = TRUE;
+        else
+            $join = FALSE;
+
+        if ($this->request->getGet('size') && is_numeric($this->request->getGet('size')))
+            $size = $this->request->getGet('size');
+        else
+            $size = 0;
+
+        if ($this->request->getGet('offset') && is_numeric($this->request->getGet('offset')))
+            $offset = $this->request->getGet('offset');
+        else
+            $offset = 0;
+
         $newsModel = \model('App\Models\NewsModel', true);
-        $data = $newsModel->getNewsComments($constraints);
+        $data = $newsModel->getNewsComments($constraints, $size, $offset, $join);
 
         if ($data)
             return $this->respond($data, 200);
         else
-            return $this->failNotFound('No news comments matching the provided resource id was found');
+            return $this->failNotFound('No news comments matching the provided news id was found');
     }
 
     public function add_category_comment()

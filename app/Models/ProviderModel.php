@@ -15,18 +15,35 @@ class ProviderModel extends Model
     {
         return $this->db->table('departments')
                         ->where($constraints)
+                        ->orderBy('department')
                         ->get()->getResultArray();
     }
 
     public function getFaculties()
     {
         return $this->db->table('faculties')
+                        ->orderBy('faculty')
                         ->get()->getResultArray();
     }
 
     public function getLevels()
     {
         return $this->db->table('levels')
+                        ->orderBy('level')
+                        ->get()->getResultArray();
+    }
+
+    public function getResourceCategories()
+    {
+        return $this->db->table('resource_categories')
+                        ->orderBy('category')
+                        ->get()->getResultArray();
+    }
+
+    public function getNewsCategories()
+    {
+        return $this->db->table('news_categories')
+                        ->orderBy('category')
                         ->get()->getResultArray();
     }
 }
