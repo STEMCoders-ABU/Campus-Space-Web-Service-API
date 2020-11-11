@@ -22,14 +22,8 @@ $routes->setTranslateURIDashes(false);
 $routes->set404Override();
 $routes->setAutoRoute(true);
 
-/**
- * --------------------------------------------------------------------
- * Route Definitions
- * --------------------------------------------------------------------
- */
+$routes->options('(:any)', 'BaseController::options');
 
-// We get a performance increase by specifying the default
-// route since we don't have to scan directories.
 $routes->group('1.0', function($routes)
 {
 	$routes->group('provider', function($routes)
@@ -87,6 +81,50 @@ $routes->group('1.0', function($routes)
 	});
 });
 
+$routes->group('1.1', function($routes) {
+	$routes->get('faculties', 'Provider::get_faculties');
+	$routes->get('departments', 'Provider::get_departments');
+	$routes->get('levels', 'Provider::get_levels');
+	$routes->get('courses', 'Provider::get_courses');
+	$routes->get('categories', 'Provider::get_resource_categories');
+	
+	$routes->group('moderator', function($routes) {
+		$routes->get('', 'Moderator::show');
+		$routes->put('', 'Moderator::update');
+		$routes->get('courses', 'Moderator::courses');
+		$routes->post('courses', 'Moderator::add_course');
+		$routes->get('resources', 'Moderator::get_resources');
+		
+		$routes->group('resource', function($routes) {
+			$routes->get('', 'Moderator::get_resource');
+			$routes->post('', 'Moderator::add_resource');
+			$routes->delete('', 'Moderator::delete_resource');
+			$routes->put('', 'Moderator::update_resource');
+		});
+
+		$routes->group('session', function($routes) {
+			$routes->get('', 'Moderator::verifySession');
+			$routes->post('', 'Moderator::createSession');
+			$routes->delete('', 'Moderator::clearSession');
+		});
+	});
+
+	$routes->group('resources', function($routes)
+	{
+		$routes->get('', 'Resources::show');
+		$routes->get('resource', 'Resources::get_resource');
+		$routes->post('search', 'Resources::search');
+		$routes->get('download', 'Resources::download');
+	});
+
+	$routes->group('comments', function($routes)
+	{
+		$routes->get('', 'Resources::show_comments');
+		$routes->post('', 'Resources::add_comment');
+		$routes->get('category', 'Resources::show_category_comments');
+		$routes->post('category', 'Resources::add_category_comment');
+	});
+});
 
 /**
  * --------------------------------------------------------------------

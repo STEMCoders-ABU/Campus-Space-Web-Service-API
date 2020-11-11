@@ -4,9 +4,6 @@ class Home extends BaseController
 {
 	public function index()
 	{
-		return view('welcome_message');
+		return 'CAMPUS SPACE API';
 	}
-
-	//--------------------------------------------------------------------
-
 }
