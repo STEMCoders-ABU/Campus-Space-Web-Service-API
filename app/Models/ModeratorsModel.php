@@ -80,7 +80,7 @@ class ModeratorsModel extends Model
     public function add_resource ($entries)
     {
         $this->db->table('resources')->insert($entries);
-        return $this->db->affectedRows() != 0;
+        return $this->insertID();
     }
 
     public function getNewsCategories()

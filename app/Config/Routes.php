@@ -115,6 +115,26 @@ $routes->group('1.1', function($routes) {
 		});
 	});
 
+	$routes->group('admin', function($routes) {
+		$routes->group('session', function($routes) {
+			$routes->get('', 'Admin::verifySession');
+			$routes->post('', 'Admin::createSession');
+			$routes->delete('', 'Admin::clearSession');
+		});
+
+		$routes->group('faculty', function($routes) {
+			$routes->post('', 'Admin::addFaculty');
+			$routes->put('(:segment)', 'Admin::updateFaculty/$1');
+			$routes->delete('(:segment)', 'Admin::removeFaculty/$1');
+		});
+
+		$routes->group('department', function($routes) {
+			$routes->post('', 'Admin::addDepartment');
+			$routes->put('(:segment)', 'Admin::updateDepartment/$1');
+			$routes->delete('(:segment)', 'Admin::removeDepartment/$1');
+		});
+	});
+
 	$routes->group('resources', function($routes)
 	{
 		$routes->get('', 'Resources::show');
