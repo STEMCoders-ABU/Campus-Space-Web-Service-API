@@ -107,6 +107,9 @@ class Moderator extends BaseController
 		
 			if ($moderator) {
 				$fields = $this->request->getJSON(true);
+				
+				if (!$fields)
+					$fields = $this->request->getPost();
 
 				if (! $fields)
 					return $this->failNotFound('No input data was provided!');
@@ -473,7 +476,10 @@ class Moderator extends BaseController
 					return $this->failNotFound('No resource_id was provided!');
 	
 				$fields = $this->request->getJSON(true);
-	
+				
+				if (!$fields)
+					$fields = $this->request->getPost();
+
 				if (! $fields)
 					return $this->failNotFound('No input data was provided!');
 	
@@ -538,6 +544,9 @@ class Moderator extends BaseController
 		
 			if ($moderator) {
 				$fields = $this->request->getJSON(true);
+				
+				if (!$fields)
+					$fields = $this->request->getPost();
 
 				if (! $fields)
 					return $this->failNotFound('No input data was provided!');

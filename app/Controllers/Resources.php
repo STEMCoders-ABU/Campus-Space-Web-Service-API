@@ -114,6 +114,10 @@ class Resources extends BaseController
             $constraints = [];
 
             $search = $this->request->getPost('search');
+            
+            if (!$search)
+                $search = $this->request->getJSON(true)['search'];
+
             if (! $search)
                 return $this->failNotFound('No input data was provided!');
     
@@ -266,7 +270,10 @@ class Resources extends BaseController
             // Set the headers
             $this->setDefaultHeaders();
             
-            $fields = $this->request->getPost();
+            $fields = $this->request->getJSON(true);
+            
+            if (!$fields)
+                $fields = $this->request->getPost();
 
             if (! $fields)
                 return $this->failNotFound('No input data was provided!');
@@ -313,6 +320,9 @@ class Resources extends BaseController
             $this->setDefaultHeaders();
 
             $fields = $this->request->getJSON(true);
+            
+            if (!$fields)
+                $fields = $this->request->getPost();
 
             if (! $fields)
                 return $this->failNotFound('No input data was provided!');
@@ -356,7 +366,7 @@ class Resources extends BaseController
             if ($this->request->getGet('resource_id') != null && is_numeric($this->request->getGet('resource_id')))
                 $resource_id = $this->request->getGet('resource_id');
             else
-                return $this->failNotFound('No input data was provided!');
+                return $this->failNotFound('No resource_id was provided!');
 
             $resources_model = \model('App\Models\ResourcesModel', true);
             $resource = $resources_model->get_resource($resource_id);
