@@ -107,6 +107,12 @@ $routes->group('1.1', function($routes) {
 			$routes->post('', 'Moderator::createSession');
 			$routes->delete('', 'Moderator::clearSession');
 		});
+
+		$routes->group('password_reset', function($routes) {
+			$routes->get('', 'Moderator::resendVerificationCode');
+			$routes->post('', 'Moderator::initializePasswordReset');
+			$routes->delete('', 'Moderator::finalizePasswordReset');
+		});
 	});
 
 	$routes->group('resources', function($routes)

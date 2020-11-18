@@ -8,15 +8,7 @@ use CodeIgniter\Controller;
 
 class BaseController extends Controller
 {
-	
-	/**
-	 * An array of helpers to be loaded automatically upon
-	 * class instantiation. These helpers will be available
-	 * to all other controllers that extend BaseController.
-	 *
-	 * @var array
-	 */
-	protected $helpers = [];
+	protected $helpers = ['text'];
 
 	protected $session;
 	protected $validation;
@@ -63,7 +55,7 @@ class BaseController extends Controller
 	}
 
 	/* Converts an array of strings to a single string. It uses newline (\n) as a separator. */
-	protected function array_to_string ($array) 
+	protected function errorArrayToString($array) 
 	{
 		$str = '';
 		foreach ($array as $item) {
