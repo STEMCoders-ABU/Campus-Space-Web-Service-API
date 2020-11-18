@@ -133,6 +133,10 @@ $routes->group('1.1', function($routes) {
 			$routes->put('(:segment)', 'Admin::updateDepartment/$1');
 			$routes->delete('(:segment)', 'Admin::removeDepartment/$1');
 		});
+
+		$routes->group('moderator', function($routes) {
+			$routes->post('', 'Admin::addModerator');
+		});
 	});
 
 	$routes->group('resources', function($routes)

@@ -66,7 +66,7 @@ class Admin extends BaseController
                 $data = $this->request->getJSON(true);
                 if (!$data)
                     return $this->failNotFound('No valid data was provided!');
-                    
+
                 // get the faculty
                 $faculty = $this->model->getFaculty($id);
                 if (!$faculty)
@@ -257,7 +257,7 @@ class Admin extends BaseController
                     return $this->failNotFound('Department not found!');
 
                 if ($this->model->removeDepartment($id)) {
-                    $this->respondNoContent('Department updated');
+                    $this->respondNoContent('Department removed.');
                 }
                 else
                     return $this->fail('Failed to remove department');
@@ -382,5 +382,72 @@ class Admin extends BaseController
 			// We can authenticate if a BASIC AUTH header was provided.
 			return $this->authenticate();
 		}
-	}
+    }
+    
+    public function addModerator()
+    {
+        try {
+            // Set the headers
+            $this->setDefaultHeaders();
+
+            $admin = $this->authenticateSession();
+
+            if ($admin) {
+                $data = $this->request->getJSON(true);
+                if (!$data)
+                    return $this->failNotFound('No valid data was provided!');
+
+                // initial validation rules
+                $validationRules = [
+                    'full_name' => 'required|trim|alpha_numeric_space|max_length[60]',
+                    'username' => 'required|trim|alpha_numeric_space|max_length[12]|is_unique[moderators.username]',
+                    'email' => 'required|trim|valid_email|max_length[50]|is_unique[moderators.email]',
+                    'phone' => 'required|trim|alpha_numeric|max_length[20]|is_unique[moderators.phone]',
+                    'gender' => 'required|trim|in_list[Male, Female]',
+                    'faculty_id' => 'required|trim|is_numeric|is_not_unique[faculties.id]',
+                    'department_id' => 'required|trim|is_numeric|is_not_unique[departments.id]',
+                    'level_id' => 'required|trim|is_numeric|is_not_unique[levels.id]',
+                    'password' => 'required',
+                ];
+
+                $this->validation->setRules($validationRules);
+                if ($this->validation->run($data)) {
+                    // Make sure the moderator is new
+                    if ($this->model->getModerator([
+                        'faculty_id' => $data['faculty_id'],
+                        'department_id' => $data['department_id'],
+                        'level_id' => $data['level_id'],
+                    ]))
+                        return $this->failResourceExists('A moderator for this combination exists!');
+
+                    $entries = [
+                        'full_name' => $data['full_name'],
+                        'username' => $data['username'],
+                        'email' => $data['email'],
+                        'phone' => $data['phone'],
+                        'gender' => $data['gender'],
+                        'faculty_id' => $data['faculty_id'],
+                        'department_id' => $data['department_id'],
+                        'level_id' => $data['level_id'],
+                        'password' => password_hash($data['password'], PASSWORD_DEFAULT),
+                    ];
+
+                    // Add the faculty to the database
+                    $id = $this->model->addModerator($entries);
+                    if ($id) 
+                        return $this->respondNoContent('Moderator added.');
+                    else 
+                        return $this->fail('An internal error occured');
+                }
+                else {
+                    return $this->failValidationError($this->errorArrayToString($this->validation->getErrors()));
+                }
+            }
+            else // failed authentication
+                return $this->failUnauthorized('Authentication failed!');
+        } catch (\Throwable $th) {
+            $this->logException($th);
+            return $this->fail('An internal error occured', 500);
+        }
+    }
 }
