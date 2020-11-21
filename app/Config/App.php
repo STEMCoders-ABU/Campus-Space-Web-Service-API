@@ -21,7 +21,7 @@ class App extends BaseConfig
 	| environments.
 	|
 	*/
-	public $baseURL = 'http://localhost/project1/csapi/';
+	public $baseURL = 'http://localhost/csapi/';
 
 	/*
 	|--------------------------------------------------------------------------
@@ -99,7 +99,7 @@ class App extends BaseConfig
 	| dates with the date helper, and can be retrieved through app_timezone()
 	|
 	*/
-	public $appTimezone = 'America/Chicago';
+	public $appTimezone = 'Africa/Lagos';
 
 	/*
 	|--------------------------------------------------------------------------

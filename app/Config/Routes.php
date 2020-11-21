@@ -87,6 +87,8 @@ $routes->group('1.1', function($routes) {
 	$routes->get('levels', 'Provider::get_levels');
 	$routes->get('courses', 'Provider::get_courses');
 	$routes->get('categories', 'Provider::get_resource_categories');
+	$routes->get('moderator/public', 'Provider::get_moderator');
+	$routes->get('stats', 'Provider::get_stats');
 	
 	$routes->group('moderator', function($routes) {
 		$routes->get('', 'Moderator::show');
@@ -109,9 +111,9 @@ $routes->group('1.1', function($routes) {
 		});
 
 		$routes->group('password_reset', function($routes) {
-			$routes->get('', 'Moderator::resendVerificationCode');
+			$routes->post('resend', 'Moderator::resendVerificationCode');
 			$routes->post('', 'Moderator::initializePasswordReset');
-			$routes->delete('', 'Moderator::finalizePasswordReset');
+			$routes->post('finalize', 'Moderator::finalizePasswordReset');
 		});
 	});
 
@@ -145,6 +147,7 @@ $routes->group('1.1', function($routes) {
 		$routes->get('resource', 'Resources::get_resource');
 		$routes->post('search', 'Resources::search');
 		$routes->get('download', 'Resources::download');
+		$routes->post('subscription', 'Resources::addSubscription');
 	});
 
 	$routes->group('comments', function($routes)

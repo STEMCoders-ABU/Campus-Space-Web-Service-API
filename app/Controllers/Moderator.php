@@ -151,6 +151,7 @@ class Moderator extends BaseController
 
 				if ($this->model->update($id, $fields)) {
 					$data = $this->model->getModeratorData($moderator['username'], $join);
+					$this->session->set($this->moderator_session_name, $data);
 					return $this->respond($data, 200);
 				}
 				else {
@@ -241,7 +242,7 @@ class Moderator extends BaseController
 				if ($category_id == 1)
 					$allowed_types = 'pdf';
 				else if ($category_id == 2)
-					$allowed_types = '3gpp,mp4';
+					$allowed_types = '3gpp,mp4,webm,mkv';
 				else if ($category_id == 3)
 					$allowed_types = 'pdf';
 				else if ($category_id == 4)
@@ -278,8 +279,8 @@ class Moderator extends BaseController
 
 				
 				$entries = [
-					'title' => $this->request->getPost('title'),
-					'description' => $this->request->getPost('description'),
+					'title' => $fields['title'],
+					'description' => $fields['description'],
 					'course_id' => $course_id,
 					'category_id' => $category_id,
 					'faculty_id' => $faculty_id,
@@ -588,8 +589,8 @@ class Moderator extends BaseController
 
 				
 				$entries = [
-					'course_title' => $this->request->getPost('course_title'),
-					'course_code' => $this->request->getPost('course_code'),
+					'course_title' => $fields['course_title'],
+					'course_code' => $fields['course_code'],
 					'department_id' => $department_id,
 					'level_id' => $level_id,
 				];
@@ -647,7 +648,7 @@ class Moderator extends BaseController
                     $email->setTo($data['email']);
 
                     $email->setSubject('Campus Space Password Reset');
-                    $email->setMessage($this->getPassResetEmailBody($moderator['full_name'], $verification_code));
+                    $email->setMessage($this->getPassResetEmailBody($moderator['full_name'] . ' (@' . $moderator['username'] . ')', $verification_code));
 
                     if (!$email->send())
                         return $this->fail('Failed to send verification code');
@@ -744,7 +745,7 @@ class Moderator extends BaseController
                         return $this->fail('Failed to reset password');
                 }
                 else
-                    return $this->failValidationError('Invalid email');
+                    return $this->failValidationError('Invalid email\n');
             }
             else // failed validation
                 return $this->failValidationError($this->errorArrayToString($this->validation->getErrors()));
@@ -784,7 +785,7 @@ class Moderator extends BaseController
                 $email = \Config\Services::email();
                 $email->setTo($data['email']);
                 $email->setSubject('Campus Space Password Reset');
-                $email->setMessage($this->getPassResetEmailBody($moderator['full_name'], $reset['verification_code']));
+                $email->setMessage($this->getPassResetEmailBody($moderator['full_name'] . ' (@' . $moderator['username'] . ')', $reset['verification_code']));
 
                 if (!$email->send())
                     return $this->fail('Failed to resend verification code');

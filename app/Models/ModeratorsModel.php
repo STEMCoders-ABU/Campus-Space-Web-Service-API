@@ -193,4 +193,11 @@ class ModeratorsModel extends Model
         else
             return FALSE;
     }
+
+    public function getSubscribers($constraints)
+    {
+        return $this->db->table('resources_subscriptions')
+                    ->where($constraints)
+                    ->get()->getResultArray();
+    }
 }

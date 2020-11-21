@@ -54,8 +54,45 @@ class BaseController extends Controller
 		}
 	}
 
+	protected function setDefaultDownloadHeaders($response) 
+	{
+	    try {
+			$origin = $this->request->getHeader('Origin');
+			if (!$origin)
+				return;
+
+			$origin = $origin->getValue();
+			$allowed_origin = '';
+			
+			$main_domain = 'thrifty.com';
+			if ($origin == ('https://' . $main_domain) || $origin == ('https://www.' . $main_domain))
+				$allowed_origin = $origin;
+				
+			if (IN_DEVELOPMENT)
+				$allowed_origin = $origin;
+
+			$response->setHeader('Access-Control-Allow-Origin', $allowed_origin);
+			$response->setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type, *');
+			$response->setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS, DELETE, PATCH, PUT');
+			$response->setHeader('Access-Control-Allow-Credentials', 'true');
+		} catch (Throwable $th) {
+			// We do nothing. If the headers are not provided then access will be denied!
+		}
+	}
+
 	/* Converts an array of strings to a single string. It uses newline (\n) as a separator. */
 	protected function errorArrayToString($array) 
+	{
+		$str = '';
+		foreach ($array as $item) {
+			$str .= $item . '\n';
+		}
+
+		return $str;
+	}
+
+	/* Converts an array of strings to a single string. It uses newline (\n) as a separator. Fallback for older versions. */
+	protected function array_to_string($array) 
 	{
 		$str = '';
 		foreach ($array as $item) {

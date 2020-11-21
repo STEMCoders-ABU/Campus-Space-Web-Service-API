@@ -6,6 +6,11 @@ class Resources extends BaseController
 {
     use ResponseTrait;
 
+    public function __construct()
+	{
+		$this->model = \model('App\Models\ResourcesModel', true);
+    }
+    
     public function show()
     {
         try {
@@ -94,6 +99,7 @@ class Resources extends BaseController
             $resourcesModel = \model('App\Models\ResourcesModel', true);
             $data = $resourcesModel->get_resource_item(['resources.id' => $resource_id], $join);
             if ($data) {
+                $data['file_url'] = \site_url(RESOURCES_PATH . $data['file']);
                 return $this->respond($data, 200);
             }
             else {
@@ -138,7 +144,7 @@ class Resources extends BaseController
     
             if ($category_id)
                 $constraints['resources.category_id'] = $category_id;
-    
+            log_message('error', $category_id);
             if ($course_id)
                 $constraints['resources.course_id'] = $course_id;
     
@@ -287,18 +293,19 @@ class Resources extends BaseController
                 'level_id' => 'required|is_not_unique[levels.id]',
             ];
     
-            if (! $this->validate($validationRules)) {
+            $this->validation->setRules($validationRules);
+            if (! $this->validation->run($fields)) {
                 return $this->failValidationError($this->array_to_string($this->validator->getErrors()));
             }
     
             $model = \model('App\Models\ResourcesModel', true);
             $entries = [
-                'author' => $this->request->getPost('author'),
-                'comment' => $this->request->getPost('comment'),
-                'category_id' => $this->request->getPost('category_id'),
-                'course_id' => $this->request->getPost('course_id'),
-                'department_id' => $this->request->getPost('department_id'),
-                'level_id' => $this->request->getPost('level_id'),
+                'author' => $fields['author'],
+                'comment' => $fields['comment'],
+                'category_id' => $fields['category_id'],
+                'course_id' => $fields['course_id'],
+                'department_id' => $fields['department_id'],
+                'level_id' => $fields['level_id'],
             ];
     
             if ($model->add_category_comment($entries)) {
@@ -340,9 +347,9 @@ class Resources extends BaseController
     
             $model = \model('App\Models\ResourcesModel', true);
             $entries = [
-                'author' => $this->request->getPost('author'),
-                'comment' => $this->request->getPost('comment'),
-                'resource_id' => $this->request->getPost('resource_id'),
+                'author' => $fields['author'],
+                'comment' => $fields['comment'],
+                'resource_id' => $fields['resource_id'],
             ];
     
             if ($model->add_comment($entries)) {
@@ -377,7 +384,12 @@ class Resources extends BaseController
                 if (file_exists($file)) {
                     $entry = ['downloads' => $resource['downloads'] + 1];
                     $resources_model->update_resource($resource_id, $entry);
-                    return $this->response->download($file, NULL, TRUE);
+                    $res = $this->response->download($file, NULL, TRUE);
+
+                    // Set the headers
+                    $this->setDefaultDownloadHeaders($res);
+
+                    return $res;
                 }
                 else {
                     return $this->failNotFound('The requested resource file does not exist!');
@@ -389,6 +401,57 @@ class Resources extends BaseController
         } catch(\Throwable $th) {
             $this->logException($th);
             return $this->fail('An internal error occurred!', 500);
+        }
+    }
+
+    public function addSubscription()
+    {
+        try {
+            // Set the headers
+            $this->setDefaultHeaders();
+
+            $data = $this->request->getJSON(true);
+            if (!$data)
+                return $this->failNotFound('No valid data was provided!');
+
+            // initial validation rules
+            $validationRules = [
+                'email' => 'required|trim|valid_email|max_length[50]',
+                'faculty_id' => 'required|trim|is_numeric|is_not_unique[faculties.id]',
+                'department_id' => 'required|trim|is_numeric|is_not_unique[departments.id]',
+                'level_id' => 'required|trim|is_numeric|is_not_unique[levels.id]',
+            ];
+
+            $this->validation->setRules($validationRules);
+            if ($this->validation->run($data)) {
+                // Make sure the subscription is new
+                if ($this->model->getSubscription([
+                    'faculty_id' => $data['faculty_id'],
+                    'department_id' => $data['department_id'],
+                    'level_id' => $data['level_id'],
+                    'email' => $data['email'],
+                ]))
+                    return $this->failResourceExists('Subscription exists!');
+
+                $entries = [
+                    'faculty_id' => $data['faculty_id'],
+                    'department_id' => $data['department_id'],
+                    'level_id' => $data['level_id'],
+                    'email' => $data['email'],
+                ];
+
+                $id = $this->model->addSubscription($entries);
+                if ($id) 
+                    return $this->respondNoContent('Subscription added.');
+                else 
+                    return $this->fail('An internal error occured');
+            }
+            else {
+                return $this->failValidationError($this->errorArrayToString($this->validation->getErrors()));
+            }
+        } catch (\Throwable $th) {
+            $this->logException($th);
+            return $this->fail('An internal error occured', 500);
         }
     }
 }
