@@ -76,7 +76,6 @@ user_guide_src/cilexer/pycilexer.egg-info/*
 # Test Files
 #-------------------------
 tests/coverage*
-public/resources
 
 # Don't save phpunit under version control.
 phpunit
@@ -126,3 +125,5 @@ nb-configuration.xml
 /results/
 /phpunit*.xml
 /.phpunit.*.cache
+
+public/resources/files

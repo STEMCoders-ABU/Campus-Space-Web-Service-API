@@ -2,6 +2,7 @@
 namespace App\Controllers;
 
 \define ('RESOURCES_PATH', 'public/resources/files/');
+\define ('APP_PATH', 'public/resources/app/campus-space.apk');
 \define('IN_DEVELOPMENT', TRUE);
 
 use CodeIgniter\Controller;
@@ -38,7 +39,7 @@ class BaseController extends Controller
 			$origin = $origin->getValue();
 			$allowed_origin = '';
 			
-			$main_domain = 'thrifty.com';
+			$main_domain = 'campus-space.com.ng';
 			if ($origin == ('https://' . $main_domain) || $origin == ('https://www.' . $main_domain))
 				$allowed_origin = $origin;
 				

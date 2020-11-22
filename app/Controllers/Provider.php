@@ -251,4 +251,29 @@ class Provider extends BaseController
             return $this->fail('An internal error occurred!', 500);
         }
     }
+
+    public function downloadApp()
+    {
+        try {
+            // Set the headers
+            $this->setDefaultHeaders();
+
+            $file = APP_PATH;
+                
+            if (file_exists($file)) {
+                $res = $this->response->download($file, NULL, TRUE);
+
+                // Set the headers
+                $this->setDefaultDownloadHeaders($res);
+
+                return $res;
+            }
+            else {
+                return $this->failNotFound('The application is not available for download!');
+            }
+        } catch(\Throwable $th) {
+            $this->logException($th);
+            return $this->fail('An internal error occurred!', 500);
+        }
+    }
 }

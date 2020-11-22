@@ -89,6 +89,7 @@ $routes->group('1.1', function($routes) {
 	$routes->get('categories', 'Provider::get_resource_categories');
 	$routes->get('moderator/public', 'Provider::get_moderator');
 	$routes->get('stats', 'Provider::get_stats');
+	$routes->get('app', 'Provider::downloadApp');
 	
 	$routes->group('moderator', function($routes) {
 		$routes->get('', 'Moderator::show');
