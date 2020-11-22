@@ -189,4 +189,17 @@ class ResourcesModel extends Model
                     ->where($constraints)
                     ->get()->getRowArray();
     }
+
+    public function addSubscription($entries)
+    {
+        $this->db->table('resources_subscriptions')->insert($entries);
+        return $this->insertID();
+    }
+
+    public function getSubscription($constraints)
+    {
+        return $this->db->table('resources_subscriptions')
+                    ->where($constraints)
+                    ->get()->getRowArray();
+    }
 }

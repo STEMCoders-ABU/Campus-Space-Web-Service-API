@@ -35,6 +35,24 @@ class ModeratorsModel extends Model
                         ->get()->getRowArray();
     }
 
+    public function getModeratorDataByEmail($email, $join = FALSE)
+    {
+        if ($join == FALSE)
+            return $this->table('moderators')
+                        ->where('moderators.email', $email)
+                        ->get()->getRowArray();
+        else
+            return $this->table('moderators')
+                        ->select('moderators.id, moderators.username, moderators.email, moderators.password, moderators.full_name, ' .
+                            'moderators.gender, moderators.phone, moderators.faculty_id, moderators.department_id, moderators.level_id, ' .
+                            'moderators.reg_date, faculties.faculty, departments.department, levels.level')
+                        ->join('faculties', 'faculties.id = moderators.faculty_id')
+                        ->join('departments', 'departments.id = moderators.department_id')
+                        ->join('levels', 'levels.id = moderators.level_id')
+                        ->where('moderators.username', $username)
+                        ->get()->getRowArray();
+    }
+
     public function getCourses ($constraints, $size, $offset, $join = FALSE)
     {
         if ($join == FALSE)
@@ -62,7 +80,7 @@ class ModeratorsModel extends Model
     public function add_resource ($entries)
     {
         $this->db->table('resources')->insert($entries);
-        return $this->db->affectedRows() != 0;
+        return $this->insertID();
     }
 
     public function getNewsCategories()
@@ -145,5 +163,41 @@ class ModeratorsModel extends Model
         
         if (isset($fields['phone']))
             $validationRules['phone'] = 'required|min_length[11]|max_length[15]';
+    }
+
+    public function getPasswordReset($verification_code) 
+    {
+        return $this->db->table('password_resets')
+            ->where('verification_code', $verification_code)
+            ->get()->getRowArray();
+    }
+
+    public function getPasswordResetByEmail($email) 
+    {
+        return $this->db->table('password_resets')
+            ->where('email', $email)
+            ->get()->getRowArray();
+    }
+
+    public function deletePasswordReset($id) 
+    {
+        return $this->db->table('password_resets')
+            ->where('id', $id)
+            ->delete();
+    }
+
+    public function addPasswordReset($entries)
+    {
+        if ($this->db->table('password_resets')->insert($entries))
+            return $this->insertID();
+        else
+            return FALSE;
+    }
+
+    public function getSubscribers($constraints)
+    {
+        return $this->db->table('resources_subscriptions')
+                    ->where($constraints)
+                    ->get()->getResultArray();
     }
 }

@@ -46,4 +46,38 @@ class ProviderModel extends Model
                         ->orderBy('category')
                         ->get()->getResultArray();
     }
+
+    public function getModeratorData($constraints)
+    {
+        return $this->db->table('moderators')
+            ->select('moderators.email, moderators.full_name, ' .
+                'moderators.gender, moderators.phone, moderators.faculty_id, moderators.department_id, moderators.level_id, ' .
+                'moderators.reg_date, faculties.faculty, departments.department, levels.level')
+            ->join('faculties', 'faculties.id = moderators.faculty_id')
+            ->join('departments', 'departments.id = moderators.department_id')
+            ->join('levels', 'levels.id = moderators.level_id')
+            ->where($constraints)
+            ->get()->getRowArray();
+    }
+
+    public function getResourcesCount()
+    {
+        return $this->db->table('resources')
+                        ->select('COUNT(id) AS total')
+                        ->get()->getRowArray();
+    }
+
+    public function getDepartmentsCount()
+    {
+        return $this->db->table('departments')
+                        ->select('COUNT(id) AS total')
+                        ->get()->getRowArray();
+    }
+
+    public function getDownloadsCount()
+    {
+        return $this->db->table('resources')
+                        ->select('SUM(downloads) AS total')
+                        ->get()->getRowArray();
+    }
 }
